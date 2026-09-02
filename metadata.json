@@ -1,0 +1,6 @@
+{
+  "name": "OG Travels & Tours",
+  "description": "Premium travel agency website with comprehensive travel services, vacation packages, and booking forms.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
