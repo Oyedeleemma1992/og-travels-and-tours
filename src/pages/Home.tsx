@@ -19,7 +19,37 @@ export default function Home() {
   // Search state
   const [searchResults, setSearchResults] = useState<any>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const handleGeneratePdf = async (result: any) => {
+    try {
+      setDownloadingPdf(result.id);
+      const res = await fetch('https://ogtravelsandtours.com/api/generate-pdf', {
+        method: 'POST',
+        mode: 'cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result)
+      });
+      
+      if (!res.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Itinerary-${result.id || 'download'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err) {
+      console.error(err);
+      alert('Error generating PDF');
+    } finally {
+      setDownloadingPdf(null);
+    }
+  };
 
   const handleSearchResults = (results: any, error?: string) => {
     setSearchResults(results);
@@ -73,11 +103,6 @@ export default function Home() {
             <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
               <h2 className="text-2xl font-bold text-blue-950 mb-6 flex items-center">
                 Search Results
-                {searchResults?.status === 'mocked' && (
-                  <span className="ml-3 text-xs bg-yellow-500 text-blue-950 px-2 py-1 rounded-full uppercase tracking-widest">
-                    Mock Data
-                  </span>
-                )}
               </h2>
               
               {searchError ? (
@@ -103,8 +128,12 @@ export default function Home() {
                           </div>
                           <div className="text-right">
                             <div className="text-2xl font-black text-slate-900">{result.price}</div>
-                            <button className="mt-2 bg-yellow-500 text-blue-950 px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition-colors">
-                              Select
+                            <button 
+                              onClick={() => handleGeneratePdf(result)}
+                              disabled={downloadingPdf === result.id}
+                              className="mt-2 bg-yellow-500 text-blue-950 px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 w-full sm:w-auto"
+                            >
+                              {downloadingPdf === result.id ? 'Generating...' : 'Download PDF'}
                             </button>
                           </div>
                         </div>

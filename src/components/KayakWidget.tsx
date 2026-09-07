@@ -4,6 +4,7 @@ import { Plane, Building, Car, Calendar, MapPin, Users, AlertCircle } from 'luci
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { CityAutocomplete } from './CityAutocomplete';
 
 type Tab = 'flights' | 'hotels' | 'cars';
 
@@ -48,17 +49,11 @@ export function KayakWidget({ onSearchResults }: { onSearchResults: (results: an
     }
 
     try {
-      const trackId = sessionStorage.getItem('userTrackId') || crypto.randomUUID();
-      sessionStorage.setItem('userTrackId', trackId);
-
-      const res = await fetch('/api/kayak/search', {
-        method: 'POST',
+      const queryParams = new URLSearchParams({ ...searchParams, type: activeTab } as Record<string, string>).toString();
+      const res = await fetch(`https://ogtravelsandtours.com/api/search?${queryParams}`, {
+        method: 'GET',
+        mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: activeTab,
-          searchParams,
-          userTrackId: trackId
-        })
       });
 
       if (!res.ok) {
@@ -70,7 +65,7 @@ export function KayakWidget({ onSearchResults }: { onSearchResults: (results: an
       onSearchResults(data);
     } catch (err: any) {
       console.error(err);
-      onSearchResults(null, err.message || "Failed to connect to Sandbox API");
+      onSearchResults(null, err.message || "Failed to connect to search API");
     } finally {
       setLoading(false);
     }
@@ -84,11 +79,6 @@ export function KayakWidget({ onSearchResults }: { onSearchResults: (results: an
 
   return (
     <div className="relative w-full max-w-4xl mx-auto mt-8 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 p-2 shadow-2xl">
-      <div className="absolute -top-3 -right-3 z-10 bg-yellow-500 text-blue-950 text-xs font-bold px-3 py-1 rounded-full shadow-md uppercase tracking-wider flex items-center">
-        <AlertCircle className="w-3 h-3 mr-1" />
-        Sandbox / Beta Mode
-      </div>
-      
       <div className="flex bg-slate-900/40 rounded-xl p-1 mb-4">
         {tabs.map(tab => (
           <button
@@ -127,20 +117,18 @@ export function KayakWidget({ onSearchResults }: { onSearchResults: (results: an
                   </label>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase">Origin</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input required type="text" placeholder="City or Airport" value={origin} onChange={e => setOrigin(e.target.value)} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-950 focus:ring-1 focus:ring-blue-950 outline-none text-slate-800" />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500 uppercase">Destination</label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input required type="text" placeholder="City or Airport" value={destination} onChange={e => setDestination(e.target.value)} className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-950 focus:ring-1 focus:ring-blue-950 outline-none text-slate-800" />
-                    </div>
-                  </div>
+                  <CityAutocomplete 
+                    label="Origin" 
+                    value={origin} 
+                    onChange={setOrigin} 
+                    required 
+                  />
+                  <CityAutocomplete 
+                    label="Destination" 
+                    value={destination} 
+                    onChange={setDestination} 
+                    required 
+                  />
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-slate-500 uppercase">Departure</label>
                     <div className="relative">
@@ -278,10 +266,10 @@ export function KayakWidget({ onSearchResults }: { onSearchResults: (results: an
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Searching Sandbox...
+                Searching...
               </span>
             ) : (
-              'Search KAYAK'
+              'Search Flights & Hotels'
             )}
           </button>
         </div>
