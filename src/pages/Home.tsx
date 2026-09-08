@@ -12,70 +12,68 @@ import { HeroSlider } from '../components/HeroSlider';
 export default function Home() {
   const [openFaq, setOpenFaq] = useState<string | null>('f1');
   const [packages, setPackages] = useState(mockPackages);
-  const [reviews, setReviews] = useState(mockTestimonials);
+  const [reviews, setReviews] = useState<any[]>(mockTestimonials);
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
-  const [newReview, setNewReview] = useState({ name: '', text: '', rating: 5 });
+  const [newReview, setNewReview] = useState({ name: '', comment: '', rating: 5 });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   
-  // Search state
-  const [searchResults, setSearchResults] = useState<any>(null);
-  const [searchError, setSearchError] = useState<string | null>(null);
-  const [downloadingPdf, setDownloadingPdf] = useState<string | null>(null);
-  const resultsRef = useRef<HTMLDivElement>(null);
-
-  const handleGeneratePdf = async (result: any) => {
-    try {
-      setDownloadingPdf(result.id);
-      const res = await fetch('https://ogtravelsandtours.com/api/generate-pdf', {
-        method: 'POST',
-        mode: 'cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result)
-      });
-      
-      if (!res.ok) throw new Error('Failed to generate PDF');
-      
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Itinerary-${result.id || 'download'}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      console.error(err);
-      alert('Error generating PDF');
-    } finally {
-      setDownloadingPdf(null);
-    }
-  };
-
-  const handleSearchResults = (results: any, error?: string) => {
-    setSearchResults(results);
-    setSearchError(error || null);
-    
-    // Scroll to results smoothly
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
-
-  const handleReviewSubmit = (e: import('react').FormEvent) => {
+  const handleReviewSubmit = async (e: import('react').FormEvent) => {
     e.preventDefault();
-    const reviewData = { id: generateId(), ...newReview };
+    setIsSubmittingReview(true);
+    let apiSuccess = false;
+    let submittedData = null;
+
+    try {
+      const response = await fetch('https://ogtravelsandtours.com/api/v1/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newReview)
+      });
+      if (response.ok) {
+        submittedData = await response.json();
+        apiSuccess = true;
+      }
+    } catch (err) {
+      console.warn("API not available for reviews, saving locally");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+
+    const reviewData = apiSuccess && submittedData ? submittedData : { id: generateId(), text: newReview.comment, ...newReview };
     const updatedReviews = [reviewData, ...reviews];
     setReviews(updatedReviews);
-    setStorage("reviews", updatedReviews);
+    if (!apiSuccess) {
+      setStorage("reviews", updatedReviews);
+    }
     setIsReviewFormOpen(false);
-    setNewReview({ name: "", text: "", rating: 5 });
+    setNewReview({ name: "", comment: "", rating: 5 });
   };
 
   useEffect(() => {
-    const storedReviews = getStorage('reviews');
-    if (storedReviews && storedReviews.length > 0) {
-      setReviews(storedReviews);
-    }
+    const fetchReviews = async () => {
+      let apiSuccess = false;
+      try {
+        const response = await fetch('https://ogtravelsandtours.com/api/v1/reviews');
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setReviews(data);
+            apiSuccess = true;
+          }
+        }
+      } catch (err) {
+        console.warn("API not available, falling back to local storage reviews");
+      }
+
+      if (!apiSuccess) {
+        const storedReviews = getStorage('reviews');
+        if (storedReviews && storedReviews.length > 0) {
+          setReviews(storedReviews);
+        }
+      }
+    };
+    fetchReviews();
+
     const storedPackages = getStorage('vacation_packages');
     if (storedPackages && storedPackages.length > 0) {
       // Force update if any package has less than 5 images
@@ -94,62 +92,7 @@ export default function Home() {
   return (
     <div className="flex flex-col w-full">
       {/* Hero Section */}
-      <HeroSlider onSearchResults={handleSearchResults} />
-
-      {/* Search Results Section */}
-      <div ref={resultsRef}>
-        {(searchResults || searchError) && (
-          <section className="bg-slate-50 py-16 border-b border-slate-200">
-            <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-              <h2 className="text-2xl font-bold text-blue-950 mb-6 flex items-center">
-                Search Results
-              </h2>
-              
-              {searchError ? (
-                <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-lg">
-                  <h3 className="text-red-800 font-semibold mb-2">Error connecting to Sandbox</h3>
-                  <p className="text-red-700">{searchError}</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {searchResults?.message && (
-                    <div className="bg-blue-50 text-blue-800 p-4 rounded-lg mb-4 text-sm font-medium">
-                      {searchResults.message}
-                    </div>
-                  )}
-                  {searchResults?.results?.length > 0 ? (
-                    <div className="grid gap-4">
-                      {searchResults.results.map((result: any) => (
-                        <div key={result.id} className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:shadow-md">
-                          <div>
-                            <div className="text-sm text-slate-500 font-medium mb-1">{result.provider}</div>
-                            <h3 className="text-xl font-bold text-blue-950">{result.title}</h3>
-                            <p className="text-slate-600 mt-1">{result.details}</p>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-2xl font-black text-slate-900">{result.price}</div>
-                            <button 
-                              onClick={() => handleGeneratePdf(result)}
-                              disabled={downloadingPdf === result.id}
-                              className="mt-2 bg-yellow-500 text-blue-950 px-6 py-2 rounded-lg font-bold hover:bg-yellow-400 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 w-full sm:w-auto"
-                            >
-                              {downloadingPdf === result.id ? 'Generating...' : 'Download PDF'}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="bg-white p-12 text-center rounded-xl shadow-sm border border-slate-100">
-                      <p className="text-slate-500 text-lg">No results found for your search criteria.</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-      </div>
+      <HeroSlider />
 
       {/* Why Choose Us */}
       <section className="bg-slate-50 py-24">
@@ -252,11 +195,11 @@ export default function Home() {
           
           <div className="grid gap-8 md:grid-cols-3">
             {reviews.map((test: any) => (
-              <div key={test.id} className="rounded-3xl bg-white p-8 shadow-sm">
+              <div key={test.id || Math.random()} className="rounded-3xl bg-white p-8 shadow-sm">
                 <div className="mb-6 flex space-x-1 text-yellow-500">
-                  {[...Array(test.rating)].map((_, i) => <Star key={i} className="h-5 w-5 fill-current" />)}
+                  {[...Array(test.rating || 5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-current" />)}
                 </div>
-                <p className="mb-6 text-lg text-slate-700 italic">"{test.text}"</p>
+                <p className="mb-6 text-lg text-slate-700 italic">"{test.comment || test.text}"</p>
                 <div className="font-bold text-blue-950">{test.name}</div>
               </div>
             ))}
@@ -284,10 +227,12 @@ export default function Home() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Your Review</label>
-                    <textarea required rows={4} value={newReview.text} onChange={e => setNewReview({...newReview, text: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-blue-950 focus:outline-none"></textarea>
+                    <textarea required rows={4} value={newReview.comment} onChange={e => setNewReview({...newReview, comment: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-3 focus:border-blue-950 focus:outline-none"></textarea>
                   </div>
                   <div className="flex gap-4">
-                    <button type="submit" className="rounded-xl bg-blue-950 px-6 py-3 font-semibold text-white hover:bg-blue-900">Submit Review</button>
+                    <button type="submit" disabled={isSubmittingReview} className="rounded-xl bg-blue-950 px-6 py-3 font-semibold text-white hover:bg-blue-900 disabled:opacity-50">
+                      {isSubmittingReview ? 'Submitting...' : 'Submit Review'}
+                    </button>
                     <button type="button" onClick={() => setIsReviewFormOpen(false)} className="rounded-xl bg-slate-200 px-6 py-3 font-semibold text-slate-700 hover:bg-slate-300">Cancel</button>
                   </div>
                 </form>

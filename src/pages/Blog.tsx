@@ -1,15 +1,73 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { User, Calendar } from 'lucide-react';
 import { getStorage } from '../lib/storage';
 
 export default function Blog() {
   const [posts, setPosts] = useState<any[]>([]);
+  const [selectedPost, setSelectedPost] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const allPosts = getStorage('blog_posts');
-    const published = allPosts.filter((p: any) => p.status === 'published');
-    setPosts(published);
+    const fetchBlogs = async () => {
+      setIsLoading(true);
+      let apiSuccess = false;
+      try {
+        const response = await fetch('https://ogtravelsandtours.com/api/v1/blogs');
+        if (response.ok) {
+          const data = await response.json();
+          setPosts(Array.isArray(data) ? data : []);
+          apiSuccess = true;
+        }
+      } catch (err) {
+        console.warn("API not available for blogs, falling back to local storage");
+      } finally {
+        setIsLoading(false);
+      }
+
+      if (!apiSuccess) {
+        const allPosts = getStorage('blog_posts');
+        if (allPosts) {
+          setPosts(allPosts.filter((p: any) => p.status === 'published'));
+        }
+      }
+    };
+    fetchBlogs();
   }, []);
+
+  if (selectedPost) {
+    return (
+      <div className="flex flex-col w-full bg-slate-50 min-h-screen pt-24 pb-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 w-full">
+          <button 
+            onClick={() => setSelectedPost(null)}
+            className="text-blue-600 font-medium mb-6 hover:underline flex items-center"
+          >
+            &larr; Back to all articles
+          </button>
+          {selectedPost.imageUrl && (
+            <img src={selectedPost.imageUrl} alt={selectedPost.title} className="w-full h-64 md:h-96 object-cover rounded-3xl mb-8 shadow-sm" />
+          )}
+          <h1 className="text-3xl md:text-5xl font-extrabold text-blue-950 mb-6 leading-tight">
+            {selectedPost.title}
+          </h1>
+          <div className="flex items-center text-slate-500 mb-10 border-b border-slate-200 pb-6">
+            <div className="flex items-center mr-6">
+              <User className="w-4 h-4 mr-2" />
+              {selectedPost.author || 'Anonymous'}
+            </div>
+            <div className="flex items-center">
+              <Calendar className="w-4 h-4 mr-2" />
+              {selectedPost.date ? new Date(selectedPost.date).toLocaleDateString() : 'Recent'}
+            </div>
+          </div>
+          <div className="prose prose-lg prose-blue max-w-none text-slate-700 whitespace-pre-wrap">
+            {selectedPost.content}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full bg-slate-50 min-h-screen">
@@ -42,23 +100,39 @@ export default function Blog() {
 
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {posts.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-20 text-slate-500 text-xl">
+              Loading articles...
+            </div>
+          ) : posts.length === 0 ? (
             <div className="text-center py-20 text-slate-500 text-xl">
               No blog posts published yet. Check back later!
             </div>
           ) : (
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
               {posts.map((post) => (
-                <div key={post.id} className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow">
-                  {post.image && (
-                    <img src={post.image} alt={post.title} className="w-full h-48 object-cover" />
+                <div 
+                  key={post.id || post._id || Math.random()} 
+                  className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-shadow cursor-pointer flex flex-col"
+                  onClick={() => setSelectedPost(post)}
+                >
+                  {post.imageUrl && (
+                    <img src={post.imageUrl} alt={post.title} className="w-full h-48 object-cover" />
                   )}
-                  <div className="p-6">
-                    <p className="text-sm text-yellow-600 font-semibold mb-2">
-                      {new Date(post.date).toLocaleDateString()}
-                    </p>
-                    <h2 className="text-2xl font-bold text-blue-950 mb-3">{post.title}</h2>
-                    <p className="text-slate-600 line-clamp-3 mb-4">{post.content}</p>
+                  <div className="p-6 flex-1 flex flex-col">
+                    <div className="flex items-center text-xs text-slate-500 mb-3 space-x-4">
+                      <span className="flex items-center text-yellow-600 font-semibold">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {post.date ? new Date(post.date).toLocaleDateString() : 'Recent'}
+                      </span>
+                      <span className="flex items-center">
+                        <User className="w-3 h-3 mr-1" />
+                        {post.author || 'Anonymous'}
+                      </span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-blue-950 mb-3 line-clamp-2">{post.title}</h2>
+                    <p className="text-slate-600 line-clamp-3 mb-4 flex-1">{post.excerpt || post.content}</p>
+                    <div className="text-blue-600 font-medium text-sm mt-auto">Read Full Article &rarr;</div>
                   </div>
                 </div>
               ))}

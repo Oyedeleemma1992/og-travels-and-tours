@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Map, Check, PlaneTakeoff, Info, List, X, Send } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { mockPackages } from '../data';
-import { supabase } from '../lib/supabase';
 import { getStorage, setStorage, generateId } from '../lib/storage';
 
 export default function PackageDetails() {

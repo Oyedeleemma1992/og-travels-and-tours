@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { Map, ChevronRight } from 'lucide-react';
 import { mockPackages } from '../data';
-import { supabase } from '../lib/supabase';
 import { useState, useEffect } from 'react';
 import { getStorage, setStorage } from '../lib/storage';
 import { PackageCard } from '../components/PackageCard';
@@ -13,11 +12,26 @@ export default function Packages() {
 
   useEffect(() => {
     const fetchPackages = async () => {
+      let apiSuccess = false;
       try {
+        const response = await fetch('https://ogtravelsandtours.com/api/v1/vacations');
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setPackages(data);
+            setStorage('vacation_packages', data);
+            apiSuccess = true;
+          }
+        }
+      } catch (err) {
+        console.warn("API not available for packages, falling back to local storage");
+      }
+
+      if (!apiSuccess) {
         let stored = getStorage('vacation_packages');
         // Force update if any package has less than 5 images
         if (stored && stored.length > 0) {
-          const needsUpdate = stored.some((p) => p.images && p.images.length < 5);
+          const needsUpdate = stored.some((p: any) => p.images && p.images.length < 5);
           if (needsUpdate) {
             stored = mockPackages;
             setStorage('vacation_packages', mockPackages);
@@ -28,11 +42,10 @@ export default function Packages() {
           setStorage('vacation_packages', mockPackages);
           stored = mockPackages;
         }
-
         if (stored && stored.length > 0) {
           // Normalize the data format to match mockPackages structure
           const formatted = stored.map((d: any) => ({
-            id: d.id,
+            id: d.id || d._id,
             title: d.title,
             destination: d.destination,
             price: d.price,
@@ -43,8 +56,6 @@ export default function Packages() {
           }));
           setPackages(formatted);
         }
-      } catch (err) {
-        console.error("Error fetching packages from storage", err);
       }
     };
     fetchPackages();

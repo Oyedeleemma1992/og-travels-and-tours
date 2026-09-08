@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from 'react';
 import { Lock, LayoutDashboard, Package, Plane, Hotel, BookOpen, MessageSquare, Phone, LogOut, Plus, LogIn, X, Trash2, Edit } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { getStorage, setStorage, generateId } from '../lib/storage';
 import { mockPackages } from '../data';
 
@@ -24,25 +22,62 @@ export default function Admin() {
   }, []);
 
   const fetchData = async () => {
-    let pkg = getStorage('vacation_packages');
-    if (!pkg || pkg.length === 0) {
-      setStorage('vacation_packages', mockPackages);
-      pkg = mockPackages;
-    } else {
-      const needsUpdate = pkg.some((p) => p.images && p.images.length < 5);
-      if (needsUpdate) {
-        pkg = mockPackages;
-        setStorage('vacation_packages', mockPackages);
+    try {
+      const response = await fetch('https://ogtravelsandtours.com/api/v1/vacations');
+      if (response.ok) {
+        const data = await response.json();
+        setPackages(Array.isArray(data) ? data : []);
+      } else {
+        throw new Error("Failed");
       }
+    } catch (err) {
+      console.warn("API not available for admin packages, falling back to local storage");
+      let pkg = getStorage('vacation_packages');
+      if (!pkg || pkg.length === 0) {
+        setStorage('vacation_packages', mockPackages);
+        pkg = mockPackages;
+      } else {
+        const needsUpdate = pkg.some((p) => p.images && p.images.length < 5);
+        if (needsUpdate) {
+          pkg = mockPackages;
+          setStorage('vacation_packages', mockPackages);
+        }
+      }
+      setPackages(pkg);
     }
-    setPackages(pkg);
 
     // Others from localStorage
-    setFlights(getStorage('flight_bookings'));
-    setHotels(getStorage('hotel_reservations'));
-    setBlogs(getStorage('blog_posts'));
-    setReviews(getStorage('reviews'));
-    setContacts(getStorage('contact_messages'));
+    setFlights(getStorage('flight_bookings') || []);
+    setHotels(getStorage('hotel_reservations') || []);
+    setContacts(getStorage('contact_messages') || []);
+    
+    // Fetch blogs from API
+    try {
+      const response = await fetch('https://ogtravelsandtours.com/api/v1/blogs');
+      if (response.ok) {
+        const data = await response.json();
+        setBlogs(Array.isArray(data) ? data : []);
+      } else {
+        setBlogs(getStorage('blog_posts') || []);
+      }
+    } catch(err) {
+      console.warn("API not available for admin blogs, falling back to local storage");
+      setBlogs(getStorage('blog_posts') || []);
+    }
+
+    // Fetch reviews from API
+    try {
+      const response = await fetch('https://ogtravelsandtours.com/api/v1/reviews');
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(Array.isArray(data) ? data : []);
+      } else {
+        setReviews(getStorage('reviews') || []);
+      }
+    } catch(err) {
+      console.warn("API not available for admin reviews, falling back to local storage");
+      setReviews(getStorage('reviews') || []);
+    }
   };
 
   const handleLogin = (e) => {
@@ -94,7 +129,7 @@ export default function Admin() {
   
   const openForm = (type, item = null) => {
     setFormType(type);
-    setCurrentEdit(item || {});
+    setCurrentEdit(item || (type === 'blogs' ? { author: 'Kayode Oyedele' } : {}));
     setIsFormOpen(true);
   };
 
@@ -106,6 +141,72 @@ export default function Admin() {
       'reviews': { list: reviews, set: setReviews, key: 'reviews' }
     }[formType];
     
+    if (formType === 'blogs' && !currentEdit.id) {
+      try {
+        const toTitleCase = (str) => {
+          return str.replace(
+            /\w\S*/g,
+            (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
+          );
+        };
+        
+        const formData = new FormData();
+        formData.append('title', toTitleCase(currentEdit.title || ''));
+        if (currentEdit.excerpt) formData.append('excerpt', currentEdit.excerpt);
+        formData.append('content', currentEdit.content || '');
+        formData.append('author', currentEdit.author || 'Kayode Oyedele');
+        if (currentEdit.imageFile) {
+          formData.append('image', currentEdit.imageFile);
+        }
+
+        const response = await fetch('https://ogtravelsandtours.com/api/v1/blogs', {
+          method: 'POST',
+          body: formData
+        });
+        if (response.ok) {
+          setIsFormOpen(false);
+          fetchData();
+          return;
+        } else {
+          alert('Failed to save blog to API. Saving locally instead.');
+        }
+      } catch (err) {
+        console.error('Error saving blog:', err);
+        alert('Error saving blog to API. Saving locally instead.');
+      }
+    }
+
+    if (formType === 'packages' && currentEdit.id) {
+      try {
+        const formData = new FormData();
+        formData.append('id', currentEdit.id || currentEdit._id);
+        formData.append('title', currentEdit.title || '');
+        formData.append('description', currentEdit.overview || ''); // User said description, we use overview locally
+        formData.append('price', currentEdit.price || '');
+        
+        if (currentEdit.imageFiles && currentEdit.imageFiles.length > 0) {
+          Array.from(currentEdit.imageFiles).forEach((file: any) => {
+            formData.append('images', file);
+          });
+        }
+
+        const response = await fetch('https://ogtravelsandtours.com/api/v1/vacations/update', {
+          method: 'POST',
+          body: formData
+        });
+        if (response.ok) {
+          setIsFormOpen(false);
+          fetchData();
+          return;
+        } else {
+          alert('Failed to update package on API. Saving locally instead.');
+        }
+      } catch (err) {
+        console.error('Error updating package:', err);
+        alert('Error updating package to API. Saving locally instead.');
+      }
+    }
+
     let updated;
     if (!currentEdit.id) {
       updated = [{ ...currentEdit, id: formType === 'packages' ? 'pkg-' + Date.now() : generateId(), date: new Date().toISOString() }, ...conf.list];
@@ -235,14 +336,14 @@ export default function Admin() {
                     </tr>
                   ))}
                   {activeTab === 'blogs' && blogs.map(b => (
-                    <tr key={b.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <tr key={b.id || b._id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="p-4">
                         <div className="font-bold text-blue-950">{b.title}</div>
-                        <div className="text-sm text-slate-500">Status: {b.status} | Date: {new Date(b.date).toLocaleDateString()}</div>
+                        <div className="text-sm text-slate-500">Author: {b.author || 'Anonymous'} | Date: {b.date ? new Date(b.date).toLocaleDateString() : 'Recent'}</div>
                       </td>
                       <td className="p-4 text-right">
                         <button onClick={() => openForm('blogs', b)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit className="w-4 h-4" /></button>
-                        <button onClick={() => deleteItem('blogs', b.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => deleteItem('blogs', b.id || b._id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))}
@@ -336,12 +437,12 @@ export default function Admin() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Image URLs (comma separated)</label>
-                    <input required type="text" value={Array.isArray(currentEdit?.images) ? currentEdit.images.join(',') : currentEdit?.image || ''} onChange={e => {
-                      const val = e.target.value;
-                      const arr = val.split(',').map(s => s.trim());
-                      setCurrentEdit({...currentEdit, image: arr[0], images: arr});
-                    }} className="w-full rounded-xl border border-slate-300 px-4 py-2" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Image Upload (Select multiple)</label>
+                    <input type="file" multiple accept="image/*" onChange={e => {
+                      if (e.target.files) {
+                        setCurrentEdit({...currentEdit, imageFiles: e.target.files});
+                      }
+                    }} className="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Overview</label>
@@ -356,19 +457,24 @@ export default function Admin() {
                     <input required type="text" value={currentEdit?.title || ''} onChange={e => setCurrentEdit({...currentEdit, title: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Image URL</label>
-                    <input type="text" value={currentEdit?.image || ''} onChange={e => setCurrentEdit({...currentEdit, image: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2" />
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Excerpt</label>
+                    <textarea required rows={2} value={currentEdit?.excerpt || ''} onChange={e => setCurrentEdit({...currentEdit, excerpt: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2"></textarea>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Image Upload</label>
+                    <input type="file" accept="image/*" onChange={e => {
+                      if (e.target.files && e.target.files[0]) {
+                        setCurrentEdit({...currentEdit, imageFile: e.target.files[0]});
+                      }
+                    }} className="w-full rounded-xl border border-slate-300 px-4 py-2 bg-white" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Author</label>
+                    <input type="text" value={currentEdit?.author || ''} onChange={e => setCurrentEdit({...currentEdit, author: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Content</label>
                     <textarea required rows={6} value={currentEdit?.content || ''} onChange={e => setCurrentEdit({...currentEdit, content: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2"></textarea>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-                    <select required value={currentEdit?.status || 'draft'} onChange={e => setCurrentEdit({...currentEdit, status: e.target.value})} className="w-full rounded-xl border border-slate-300 px-4 py-2">
-                      <option value="draft">Draft</option>
-                      <option value="published">Published</option>
-                    </select>
                   </div>
                 </>
               )}

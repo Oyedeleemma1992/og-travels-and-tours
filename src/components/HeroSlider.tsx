@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { KayakWidget } from './KayakWidget';
+import { FlightItineraryWizard } from './FlightItineraryWizard';
 
 const HERO_IMAGES = [
   {
@@ -81,7 +81,7 @@ export function HeroSlider({ onSearchResults }: { onSearchResults?: (results: an
           transition={{ duration: 0.8, delay: 0.4 }}
           className="w-full"
         >
-          {onSearchResults && <KayakWidget onSearchResults={onSearchResults} />}
+          <FlightItineraryWizard />
         </motion.div>
       </div>
     </section>
