@@ -14,7 +14,7 @@ export default function Packages() {
     const fetchPackages = async () => {
       let apiSuccess = false;
       try {
-        const response = await fetch('https://ogtravelsandtours.com/api/v1/vacations');
+        const response = await fetch('/api/v1/vacations');
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data) && data.length > 0) {

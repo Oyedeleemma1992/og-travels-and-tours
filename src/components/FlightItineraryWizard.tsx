@@ -19,6 +19,7 @@ export function FlightItineraryWizard() {
   const [searchError, setSearchError] = useState<string | null>(null);
   
   const [flightOffers, setFlightOffers] = useState<any[]>([]);
+  const [searchId, setSearchId] = useState<string | null>(null);
   const [hotelOffers, setHotelOffers] = useState<any[]>([]);
   const [transferOffers, setTransferOffers] = useState<any[]>([]);
   
@@ -88,19 +89,21 @@ export function FlightItineraryWizard() {
         }
         
         const payload = {
-          origin: searchParams.origin,
-          destination: searchParams.destination,
-          departure_date: searchParams.departureDate,
-          return_date: searchParams.tripType === 'round' ? searchParams.returnDate : undefined,
-          cabin_class: searchParams.cabinClass.toLowerCase(),
-          passengers: {
-            adults: searchParams.adults,
-            children: searchParams.children,
-            infants: searchParams.infants
+          searchParams: {
+            origin: searchParams.origin,
+            destination: searchParams.destination,
+            departureDate: searchParams.departureDate,
+            returnDate: searchParams.tripType === 'round' ? searchParams.returnDate : undefined,
+            cabinClass: searchParams.cabinClass,
+            passengers: {
+              adults: searchParams.adults,
+              children: searchParams.children,
+              infants: searchParams.infants
+            }
           }
         };
 
-        const res = await fetch('https://ogtravelsandtours.com/api/v1/flights/search', {
+        const res = await fetch('/api/v1/flights/search', {
           method: 'POST',
           mode: 'cors',
           headers: { 'Content-Type': 'application/json' },
@@ -110,6 +113,9 @@ export function FlightItineraryWizard() {
         if (!res.ok) throw new Error('Failed to fetch flights. Please try again.');
         const data = await res.json();
         setFlightOffers(data.offers || data.flights || data || []);
+        if (data.searchId || data.search_id) {
+          setSearchId(data.searchId || data.search_id);
+        }
         
       } else if (activeTab === 'hotels') {
         if (!hotelSearchParams.destination || !hotelSearchParams.checkIn || !hotelSearchParams.checkOut) {
@@ -151,11 +157,16 @@ export function FlightItineraryWizard() {
     setSearchError(null);
     
     try {
-      const res = await fetch('https://ogtravelsandtours.com/api/v1/flights/price_flight', {
+      const res = await fetch('/api/v1/flights/price_flight', {
         method: 'POST',
         mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ offerId: flight.id })
+        body: JSON.stringify({ 
+          searchId: searchId,
+          offer_id: flight.id || flight.offerId || flight.offer_id,
+          flightId: flight.id || flight.offerId || flight.offer_id,
+          flightData: flight 
+        })
       });
       
       if (!res.ok) throw new Error('Fare no longer available.');
@@ -274,8 +285,22 @@ export function FlightItineraryWizard() {
                    </div>
                    
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <CityAutocomplete label="Origin" value={searchParams.origin} onChange={(v) => setSearchParams({...searchParams, origin: v})} required />
-                     <CityAutocomplete label="Destination" value={searchParams.destination} onChange={(v) => setSearchParams({...searchParams, destination: v})} required />
+                     <CityAutocomplete 
+                       label="Origin" 
+                       value={searchParams.origin} 
+                       onChange={(v) => setSearchParams({...searchParams, origin: v})} 
+                       required 
+                       className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-600 bg-slate-800 text-white outline-none focus:border-yellow-500"
+                       labelClassName="text-xs font-semibold text-slate-300 uppercase"
+                     />
+                     <CityAutocomplete 
+                       label="Destination" 
+                       value={searchParams.destination} 
+                       onChange={(v) => setSearchParams({...searchParams, destination: v})} 
+                       required 
+                       className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-600 bg-slate-800 text-white outline-none focus:border-yellow-500"
+                       labelClassName="text-xs font-semibold text-slate-300 uppercase"
+                     />
                    </div>
 
                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -479,6 +504,7 @@ export function FlightItineraryWizard() {
               item={getActiveItem()}
               activeTab={activeTab}
               passenger={passengerDetails}
+              searchId={searchId}
               onNext={(ref) => {
                 setPaymentRef(ref);
                 setStep(6);

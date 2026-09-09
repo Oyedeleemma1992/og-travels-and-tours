@@ -13,7 +13,7 @@ export default function Blog() {
       setIsLoading(true);
       let apiSuccess = false;
       try {
-        const response = await fetch('https://ogtravelsandtours.com/api/v1/blogs');
+        const response = await fetch('/api/v1/blogs');
         if (response.ok) {
           const data = await response.json();
           setPosts(Array.isArray(data) ? data : []);

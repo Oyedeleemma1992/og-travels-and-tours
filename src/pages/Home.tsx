@@ -17,6 +17,23 @@ export default function Home() {
   const [newReview, setNewReview] = useState({ name: '', comment: '', rating: 5 });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentStatus = params.get('payment');
+    
+    if (paymentStatus === 'success') {
+      alert("Payment successful! Your itinerary has been generated and sent to your email.");
+    } else if (paymentStatus === 'failed') {
+      alert("Payment failed. Please try again.");
+    } else if (paymentStatus === 'error') {
+      alert("An error occurred while generating your itinerary.");
+    }
+    
+    if (paymentStatus) {
+      window.history.replaceState({}, document.title, "/");
+    }
+  }, []);
+  
   const handleReviewSubmit = async (e: import('react').FormEvent) => {
     e.preventDefault();
     setIsSubmittingReview(true);
@@ -24,7 +41,7 @@ export default function Home() {
     let submittedData = null;
 
     try {
-      const response = await fetch('https://ogtravelsandtours.com/api/v1/reviews', {
+      const response = await fetch('/api/v1/reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newReview)
@@ -53,7 +70,7 @@ export default function Home() {
     const fetchReviews = async () => {
       let apiSuccess = false;
       try {
-        const response = await fetch('https://ogtravelsandtours.com/api/v1/reviews');
+        const response = await fetch('/api/v1/reviews');
         if (response.ok) {
           const data = await response.json();
           if (Array.isArray(data) && data.length > 0) {

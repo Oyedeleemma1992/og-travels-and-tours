@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Lock, LayoutDashboard, Package, Plane, Hotel, BookOpen, MessageSquare, Phone, LogOut, Plus, LogIn, X, Trash2, Edit } from 'lucide-react';
+import { Lock, LayoutDashboard, Package, Plane, Hotel, BookOpen, MessageSquare, Phone, LogOut, Plus, LogIn, X, Trash2, Edit, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { getStorage, setStorage, generateId } from '../lib/storage';
 import { mockPackages } from '../data';
 
@@ -23,7 +24,7 @@ export default function Admin() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('https://ogtravelsandtours.com/api/v1/vacations');
+      const response = await fetch('/api/v1/vacations');
       if (response.ok) {
         const data = await response.json();
         setPackages(Array.isArray(data) ? data : []);
@@ -53,7 +54,7 @@ export default function Admin() {
     
     // Fetch blogs from API
     try {
-      const response = await fetch('https://ogtravelsandtours.com/api/v1/blogs');
+      const response = await fetch('/api/v1/blogs');
       if (response.ok) {
         const data = await response.json();
         setBlogs(Array.isArray(data) ? data : []);
@@ -67,7 +68,7 @@ export default function Admin() {
 
     // Fetch reviews from API
     try {
-      const response = await fetch('https://ogtravelsandtours.com/api/v1/reviews');
+      const response = await fetch('/api/v1/reviews');
       if (response.ok) {
         const data = await response.json();
         setReviews(Array.isArray(data) ? data : []);
@@ -108,6 +109,32 @@ export default function Admin() {
   const deleteItem = async (type, id) => {
     if (!confirm('Are you sure you want to delete this?')) return;
     
+    if (type === 'blogs') {
+      try {
+        const res = await fetch(`/api/v1/blogs/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          fetchData();
+          return;
+        } else {
+          alert('Failed to delete blog via API. Deleting locally.');
+        }
+      } catch (err) {
+        console.warn('API not available for deleting blog, deleting locally.');
+      }
+    } else if (type === 'packages') {
+      try {
+        const res = await fetch(`/api/v1/vacations/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          fetchData();
+          return;
+        } else {
+          alert('Failed to delete package via API. Deleting locally.');
+        }
+      } catch (err) {
+        console.warn('API not available for deleting package, deleting locally.');
+      }
+    }
+
     const listMap = {
       'packages': { list: packages, set: setPackages, key: 'vacation_packages' },
       'flights': { list: flights, set: setFlights, key: 'flight_bookings' },
@@ -117,7 +144,7 @@ export default function Admin() {
       'contacts': { list: contacts, set: setContacts, key: 'contact_messages' },
     };
     const conf = listMap[type];
-    const updated = conf.list.filter(item => item.id !== id);
+    const updated = conf.list.filter(item => (item.id || item._id) !== id);
     conf.set(updated);
     setStorage(conf.key, updated);
   };
@@ -141,7 +168,7 @@ export default function Admin() {
       'reviews': { list: reviews, set: setReviews, key: 'reviews' }
     }[formType];
     
-    if (formType === 'blogs' && !currentEdit.id) {
+    if (formType === 'blogs') {
       try {
         const toTitleCase = (str) => {
           return str.replace(
@@ -159,8 +186,11 @@ export default function Admin() {
           formData.append('image', currentEdit.imageFile);
         }
 
-        const response = await fetch('https://ogtravelsandtours.com/api/v1/blogs', {
-          method: 'POST',
+        const url = currentEdit.id || currentEdit._id ? `/api/v1/blogs/${currentEdit.id || currentEdit._id}` : '/api/v1/blogs';
+        const method = currentEdit.id || currentEdit._id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method: method,
           body: formData
         });
         if (response.ok) {
@@ -168,7 +198,7 @@ export default function Admin() {
           fetchData();
           return;
         } else {
-          alert('Failed to save blog to API. Saving locally instead.');
+          alert(`Failed to save blog via API (${response.status}). Saving locally instead.`);
         }
       } catch (err) {
         console.error('Error saving blog:', err);
@@ -176,11 +206,14 @@ export default function Admin() {
       }
     }
 
-    if (formType === 'packages' && currentEdit.id) {
+    if (formType === 'packages') {
       try {
         const formData = new FormData();
-        formData.append('id', currentEdit.id || currentEdit._id);
+        if (currentEdit.id || currentEdit._id) {
+          formData.append('id', currentEdit.id || currentEdit._id);
+        }
         formData.append('title', currentEdit.title || '');
+        formData.append('destination', currentEdit.destination || '');
         formData.append('description', currentEdit.overview || ''); // User said description, we use overview locally
         formData.append('price', currentEdit.price || '');
         
@@ -190,7 +223,7 @@ export default function Admin() {
           });
         }
 
-        const response = await fetch('https://ogtravelsandtours.com/api/v1/vacations/update', {
+        const response = await fetch('/api/v1/vacations/update', {
           method: 'POST',
           body: formData
         });
@@ -223,8 +256,11 @@ export default function Admin() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full">
-          <div className="flex justify-center mb-6">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full relative">
+          <Link to="/" className="absolute top-6 left-6 text-slate-400 hover:text-blue-950 flex items-center gap-2 text-sm font-medium transition-colors">
+            <Home className="w-4 h-4" /> Home
+          </Link>
+          <div className="flex justify-center mb-6 mt-4">
             <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-950">
               <Lock className="w-8 h-8" />
             </div>
@@ -255,10 +291,13 @@ export default function Admin() {
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
       <aside className="w-64 bg-blue-950 text-white p-6 flex flex-col hidden md:flex fixed h-full overflow-y-auto">
-        <div className="flex items-center gap-3 mb-10">
+        <div className="flex items-center gap-3 mb-6">
           <LayoutDashboard className="w-8 h-8 text-yellow-500" />
           <h1 className="text-xl font-bold">Admin Panel</h1>
         </div>
+        <Link to="/" className="flex items-center gap-3 px-4 py-3 mb-8 text-slate-300 hover:bg-blue-900 hover:text-white rounded-xl transition-colors">
+          <Home className="w-5 h-5" /> Back to Website
+        </Link>
         <nav className="flex-1 space-y-2">
           {tabs.map(tab => (
             <button
@@ -276,8 +315,16 @@ export default function Admin() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 md:ml-64">
+      <main className="flex-1 p-4 md:p-8 md:ml-64">
         <div className="max-w-6xl mx-auto">
+          {/* Mobile Top Bar */}
+          <div className="md:hidden flex justify-between items-center mb-6 bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <Link to="/" className="flex items-center gap-2 text-blue-950 font-bold">
+              <Home className="w-5 h-5 text-yellow-500" /> Home
+            </Link>
+            <button onClick={handleLogout} className="text-red-500 font-medium">Logout</button>
+          </div>
+
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-blue-950 capitalize">{activeTab.replace('_', ' ')}</h2>

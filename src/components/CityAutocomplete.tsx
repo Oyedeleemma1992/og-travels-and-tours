@@ -41,9 +41,11 @@ interface CityAutocompleteProps {
   onChange: (iataCode: string) => void;
   placeholder?: string;
   required?: boolean;
+  className?: string;
+  labelClassName?: string;
 }
 
-export function CityAutocomplete({ label, value, onChange, placeholder = 'City or Airport', required = false }: CityAutocompleteProps) {
+export function CityAutocomplete({ label, value, onChange, placeholder = 'City or Airport', required = false, className, labelClassName }: CityAutocompleteProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -90,7 +92,7 @@ export function CityAutocomplete({ label, value, onChange, placeholder = 'City o
 
   return (
     <div className="space-y-1 relative" ref={wrapperRef}>
-      <label className="text-xs font-semibold text-slate-500 uppercase">{label}</label>
+      <label className={labelClassName || "text-xs font-semibold text-slate-500 uppercase"}>{label}</label>
       <div className="relative">
         <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input 
@@ -100,7 +102,7 @@ export function CityAutocomplete({ label, value, onChange, placeholder = 'City o
           onChange={handleInputChange} 
           onFocus={() => setIsOpen(true)}
           required={required && !value} // Ensure it validates if empty
-          className="w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-950 focus:ring-1 focus:ring-blue-950 outline-none text-slate-800" 
+          className={className || "w-full pl-9 pr-3 py-2.5 rounded-lg border border-slate-200 focus:border-blue-950 focus:ring-1 focus:ring-blue-950 outline-none text-slate-800 bg-white"} 
         />
       </div>
       {isOpen && query && filteredLocations.length > 0 && (

@@ -12,7 +12,7 @@ export function SuccessStep({ paymentRef }: SuccessStepProps) {
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      const res = await fetch(`https://ogtravelsandtours.com/api/v1/itinerary/download/${paymentRef}`, {
+      const res = await fetch(`/api/v1/itinerary/download/${paymentRef}`, {
         method: 'GET',
         mode: 'cors'
       });

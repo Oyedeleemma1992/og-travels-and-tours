@@ -50,7 +50,7 @@ export function KayakWidget({ onSearchResults }: { onSearchResults: (results: an
 
     try {
       const queryParams = new URLSearchParams({ ...searchParams, type: activeTab } as Record<string, string>).toString();
-      const res = await fetch(`https://ogtravelsandtours.com/api/search?${queryParams}`, {
+      const res = await fetch(`/api/search?${queryParams}`, {
         method: 'GET',
         mode: 'cors',
         headers: { 'Content-Type': 'application/json' },
