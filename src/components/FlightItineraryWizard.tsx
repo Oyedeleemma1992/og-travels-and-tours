@@ -92,9 +92,9 @@ export function FlightItineraryWizard() {
           searchParams: {
             origin: searchParams.origin,
             destination: searchParams.destination,
-            departureDate: searchParams.departureDate,
-            returnDate: searchParams.tripType === 'round' ? searchParams.returnDate : undefined,
-            cabinClass: searchParams.cabinClass,
+            departure_date: searchParams.departureDate,
+            return_date: searchParams.tripType === 'round' ? searchParams.returnDate : undefined,
+            cabin_class: searchParams.cabinClass,
             passengers: {
               adults: searchParams.adults,
               children: searchParams.children,
