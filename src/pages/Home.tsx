@@ -72,7 +72,9 @@ export default function Home() {
       try {
         const response = await fetch('/api/v1/reviews');
         if (response.ok) {
-          const data = await response.json();
+          const resJson = await response.json();
+          // API returns { success: true, data: [...] }
+          const data = resJson.data || resJson;
           if (Array.isArray(data) && data.length > 0) {
             setReviews(data);
             apiSuccess = true;
@@ -84,15 +86,17 @@ export default function Home() {
 
       if (!apiSuccess) {
         const storedReviews = getStorage('reviews');
-        if (storedReviews && storedReviews.length > 0) {
+        if (Array.isArray(storedReviews) && storedReviews.length > 0) {
           setReviews(storedReviews);
+        } else {
+          setReviews(mockTestimonials); // fallback to mock data
         }
       }
     };
     fetchReviews();
 
     const storedPackages = getStorage('vacation_packages');
-    if (storedPackages && storedPackages.length > 0) {
+    if (Array.isArray(storedPackages) && storedPackages.length > 0) {
       // Force update if any package has less than 5 images
       const needsUpdate = storedPackages.some((p: any) => p.images && p.images.length < 5);
       if (needsUpdate) {
@@ -102,6 +106,7 @@ export default function Home() {
         setPackages(storedPackages);
       }
     } else {
+      setPackages(mockPackages); // explicitly set to mock just in case
       setStorage('vacation_packages', mockPackages);
     }
   }, []);
@@ -161,9 +166,9 @@ export default function Home() {
           </div>
           
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {packages.map((pkg, idx) => (
+            {Array.isArray(packages) ? packages.map((pkg, idx) => (
               <PackageCard key={pkg.id} pkg={pkg} idx={idx} />
-            ))}
+            )) : null}
           </div>
           <div className="mt-8 text-center md:hidden">
              <Link to="/packages" className="inline-flex items-center justify-center rounded-full bg-blue-950 px-8 py-3 text-sm font-semibold text-white">
@@ -211,7 +216,7 @@ export default function Home() {
           </div>
           
           <div className="grid gap-8 md:grid-cols-3">
-            {reviews.map((test: any) => (
+            {Array.isArray(reviews) ? reviews.map((test: any) => (
               <div key={test.id || Math.random()} className="rounded-3xl bg-white p-8 shadow-sm">
                 <div className="mb-6 flex space-x-1 text-yellow-500">
                   {[...Array(test.rating || 5)].map((_, i) => <Star key={i} className="h-5 w-5 fill-current" />)}
@@ -219,7 +224,7 @@ export default function Home() {
                 <p className="mb-6 text-lg text-slate-700 italic">"{test.comment || test.text}"</p>
                 <div className="font-bold text-blue-950">{test.name}</div>
               </div>
-            ))}
+            )) : null}
           </div>
 
           <div className="mt-12 text-center">
