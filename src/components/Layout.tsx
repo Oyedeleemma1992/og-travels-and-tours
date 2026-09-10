@@ -81,18 +81,18 @@ export default function Layout() {
         )}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" className="flex items-center space-x-2 shrink-0">
             <img src="https://i.ibb.co/Mxvy4spK/og-logo-removebg-preview.png" alt="OG Travels & Tours" className="h-12 w-auto object-contain" />
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden items-center space-x-8 md:flex">
+          <nav className="hidden items-center space-x-4 lg:space-x-6 md:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
                 className={cn(
-                  'text-sm font-semibold transition-colors hover:text-yellow-600',
+                  'text-sm font-semibold transition-colors hover:text-yellow-600 whitespace-nowrap',
                   location.pathname === link.path ? 'text-yellow-600' : 'text-slate-600'
                 )}
               >
@@ -101,7 +101,7 @@ export default function Layout() {
             ))}
             <Link
               to="/contact"
-              className="rounded-full bg-blue-950 px-6 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-900 hover:shadow-md"
+              className="rounded-full bg-blue-950 px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-blue-900 hover:shadow-md shrink-0"
             >
               Book Now
             </Link>

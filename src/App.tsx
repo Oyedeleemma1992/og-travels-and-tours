@@ -15,7 +15,6 @@ import Admin from './pages/Admin';
 import FlightBooking from './pages/FlightBooking';
 import HotelReservation from './pages/HotelReservation';
 import Blog from './pages/Blog';
-import KayakSearch from './pages/KayakSearch';
 
 export default function App() {
   return (
@@ -32,7 +31,6 @@ export default function App() {
           <Route path="flight-booking" element={<FlightBooking />} />
           <Route path="hotel-reservation" element={<HotelReservation />} />
           <Route path="blog" element={<Blog />} />
-          <Route path="search" element={<KayakSearch />} />
         </Route>
         <Route path="/admin/*" element={<Admin />} />
       </Routes>

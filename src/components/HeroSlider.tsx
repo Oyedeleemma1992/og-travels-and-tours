@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { FlightItineraryWizard } from './FlightItineraryWizard';
+import { Link } from 'react-router-dom';
+import { CalendarCheck } from 'lucide-react';
 
 const HERO_IMAGES = [
   {
@@ -36,10 +37,10 @@ export function HeroSlider({ onSearchResults }: { onSearchResults?: (results: an
   }, []);
 
   return (
-    <section className="relative flex min-h-[90vh] items-center justify-center overflow-hidden bg-slate-900">
+    <section className="relative flex flex-col items-center justify-start overflow-hidden bg-slate-900 pb-16 pt-20 sm:pt-28">
       {/* Background Images */}
-      <div className="absolute inset-0 z-0">
-        <AnimatePresence >
+      <div className="absolute inset-0 z-0 min-h-[90vh]">
+        <AnimatePresence>
           <motion.img
             key={currentIndex}
             src={HERO_IMAGES[currentIndex].url}
@@ -60,7 +61,7 @@ export function HeroSlider({ onSearchResults }: { onSearchResults?: (results: an
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="mb-6 text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl"
+          className="mb-6 text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl"
         >
           Explore the World <br className="hidden sm:block" />
           <span className="text-yellow-500">with Confidence</span>
@@ -70,20 +71,44 @@ export function HeroSlider({ onSearchResults }: { onSearchResults?: (results: an
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="mx-auto mb-10 max-w-3xl text-lg text-slate-300 sm:text-xl leading-relaxed"
+          className="mx-auto mb-10 max-w-3xl text-base text-slate-300 sm:text-xl leading-relaxed"
         >
           We make international travel simple through flight bookings, visa assistance, vacation packages, study abroad support, airport pickup services, and corporate travel solutions.
         </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="w-full"
-        >
-          <FlightItineraryWizard />
-        </motion.div>
       </div>
+
+      {/* Live Flight Search Widget */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.3 }}
+        className="relative z-20 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8"
+      >
+        <div className="rounded-2xl bg-white shadow-2xl overflow-hidden">
+          <iframe
+            src="/tpwl-widget.html"
+            title="Flight Search Widget"
+            className="w-full border-0"
+            style={{ minHeight: '650px' }}
+          />
+        </div>
+      </motion.div>
+
+      {/* Visa Reservation Link */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.5 }}
+        className="relative z-20 mt-8"
+      >
+        <Link
+          to="/flight-booking?tab=visa"
+          className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white bg-transparent px-8 py-4 text-lg font-bold text-white transition-all hover:bg-white/10 hover:scale-105 active:scale-95"
+        >
+          <CalendarCheck className="h-5 w-5" />
+          Visa Reservations
+        </Link>
+      </motion.div>
     </section>
   );
 }
