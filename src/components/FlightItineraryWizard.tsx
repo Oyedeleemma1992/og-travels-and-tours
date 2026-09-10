@@ -111,10 +111,12 @@ export function FlightItineraryWizard() {
         });
 
         if (!res.ok) throw new Error('Failed to fetch flights. Please try again.');
-        const data = await res.json();
-        setFlightOffers(data.offers || data.flights || data || []);
-        if (data.searchId || data.search_id) {
-          setSearchId(data.searchId || data.search_id);
+        const resJson = await res.json();
+        const extractedData = resJson.data || resJson;
+        const finalOffers = extractedData.offers || extractedData.flights || (Array.isArray(extractedData) ? extractedData : []);
+        setFlightOffers(Array.isArray(finalOffers) ? finalOffers : []);
+        if (extractedData.searchId || extractedData.search_id || resJson.searchId || resJson.search_id) {
+          setSearchId(extractedData.searchId || extractedData.search_id || resJson.searchId || resJson.search_id);
         }
         
       } else if (activeTab === 'hotels') {

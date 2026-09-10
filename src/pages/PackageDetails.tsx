@@ -180,7 +180,7 @@ export default function PackageDetails() {
                   <List className="mr-3 h-7 w-7 text-yellow-500" /> Highlights
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {pkg.highlights.map((highlight, idx) => (
+                  {Array.isArray(pkg.highlights) && pkg.highlights.map((highlight, idx) => (
                     <div key={idx} className="flex items-start">
                       <div className="mt-1 mr-3 h-2 w-2 rounded-full bg-yellow-500 shrink-0" />
                       <span className="text-slate-700 font-medium">{highlight}</span>
@@ -195,7 +195,7 @@ export default function PackageDetails() {
                     <Check className="mr-2 h-6 w-6 text-green-500" /> Inclusions
                   </h3>
                   <ul className="space-y-3">
-                    {pkg.inclusions.map((item, idx) => (
+                    {Array.isArray(pkg.inclusions) && pkg.inclusions.map((item, idx) => (
                       <li key={idx} className="flex items-start text-slate-600">
                         <Check className="mr-2 h-5 w-5 text-green-500 shrink-0" /> {item}
                       </li>
@@ -207,7 +207,7 @@ export default function PackageDetails() {
                     <X className="mr-2 h-6 w-6 text-red-500" /> Exclusions
                   </h3>
                   <ul className="space-y-3">
-                    {pkg.exclusions.map((item, idx) => (
+                    {Array.isArray(pkg.exclusions) && pkg.exclusions.map((item, idx) => (
                       <li key={idx} className="flex items-start text-slate-600">
                         <X className="mr-2 h-5 w-5 text-red-500 shrink-0" /> {item}
                       </li>

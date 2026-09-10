@@ -213,7 +213,7 @@ export default function KayakSearch() {
                 )}
               </div>
 
-              {results.results?.map((item: any, i: number) => (
+              {Array.isArray(results.results) && results.results.map((item: any, i: number) => (
                 <div key={item.id || i} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-md transition-shadow">
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">

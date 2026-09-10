@@ -38,7 +38,7 @@ export function HotelResultsStep({ offers, onSelect, onBack }: HotelResultsStepP
       </div>
 
       <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-        {offers.map((offer, idx) => {
+        {Array.isArray(offers) ? offers.map((offer, idx) => {
           const hotelName = offer.name || 'Premium Hotel';
           const price = offer.price || 'N/A';
           const currency = offer.currency || 'NGN';
@@ -89,7 +89,7 @@ export function HotelResultsStep({ offers, onSelect, onBack }: HotelResultsStepP
               </div>
             </motion.div>
           );
-        })}
+        }) : null}
       </div>
     </div>
   );

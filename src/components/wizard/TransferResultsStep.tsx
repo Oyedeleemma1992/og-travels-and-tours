@@ -38,7 +38,7 @@ export function TransferResultsStep({ offers, onSelect, onBack }: TransferResult
       </div>
 
       <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-        {offers.map((offer, idx) => {
+        {Array.isArray(offers) ? offers.map((offer, idx) => {
           const vehicleName = offer.vehicleType || 'Standard Sedan';
           const price = offer.price || 'N/A';
           const currency = offer.currency || 'NGN';
@@ -85,7 +85,7 @@ export function TransferResultsStep({ offers, onSelect, onBack }: TransferResult
               </div>
             </motion.div>
           );
-        })}
+        }) : null}
       </div>
     </div>
   );

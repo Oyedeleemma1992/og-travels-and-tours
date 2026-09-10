@@ -13,7 +13,7 @@ export function FlightResultsStep({ offers, tripType, onSelect, onBack }: Flight
   const [selectionStage, setSelectionStage] = useState<'outbound' | 'return'>('outbound');
   const [selectedOutboundId, setSelectedOutboundId] = useState<string | null>(null);
 
-  if (!offers || offers.length === 0) {
+  if (!Array.isArray(offers) || offers.length === 0) {
     return (
       <div className="bg-slate-900/60 p-8 rounded-xl border border-slate-700 text-center">
         <Plane className="w-12 h-12 text-slate-500 mx-auto mb-4" />
@@ -104,7 +104,7 @@ export function FlightResultsStep({ offers, tripType, onSelect, onBack }: Flight
           exit={{ opacity: 0, x: -20 }}
           className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar"
         >
-          {displayOffers.map((offer, idx) => {
+          {Array.isArray(displayOffers) ? displayOffers.map((offer, idx) => {
             const airlineName = offer.owner?.name || offer.airline || 'Unknown Airline';
             const price = offer.total_amount || offer.price || 'N/A';
             const currency = offer.total_currency || offer.currency || 'NGN';
@@ -205,7 +205,7 @@ export function FlightResultsStep({ offers, tripType, onSelect, onBack }: Flight
                 </div>
               </motion.div>
             );
-          })}
+          }) : null}
         </motion.div>
       </AnimatePresence>
     </div>

@@ -16,7 +16,8 @@ export default function Packages() {
       try {
         const response = await fetch('/api/v1/vacations');
         if (response.ok) {
-          const data = await response.json();
+          const resJson = await response.json();
+          const data = resJson.data || resJson;
           if (Array.isArray(data) && data.length > 0) {
             setPackages(data);
             setStorage('vacation_packages', data);
@@ -30,7 +31,7 @@ export default function Packages() {
       if (!apiSuccess) {
         let stored = getStorage('vacation_packages');
         // Force update if any package has less than 5 images
-        if (stored && stored.length > 0) {
+        if (Array.isArray(stored) && stored.length > 0) {
           const needsUpdate = stored.some((p: any) => p.images && p.images.length < 5);
           if (needsUpdate) {
             stored = mockPackages;
@@ -38,11 +39,11 @@ export default function Packages() {
           }
         }
         
-        if (!stored || stored.length === 0) {
+        if (!Array.isArray(stored) || stored.length === 0) {
           setStorage('vacation_packages', mockPackages);
           stored = mockPackages;
         }
-        if (stored && stored.length > 0) {
+        if (Array.isArray(stored) && stored.length > 0) {
           // Normalize the data format to match mockPackages structure
           const formatted = stored.map((d: any) => ({
             id: d.id || d._id,
@@ -100,9 +101,9 @@ export default function Packages() {
             <h2 className="text-3xl font-bold text-blue-950">Available Packages</h2>
           </div>
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {packages.map((pkg, idx) => (
+            {Array.isArray(packages) ? packages.map((pkg, idx) => (
               <PackageCard key={pkg.id} pkg={pkg} idx={idx} />
-            ))}
+            )) : null}
           </div>
         </div>
       </section>

@@ -242,9 +242,9 @@ export default function Admin() {
 
     let updated;
     if (!currentEdit.id) {
-      updated = [{ ...currentEdit, id: formType === 'packages' ? 'pkg-' + Date.now() : generateId(), date: new Date().toISOString() }, ...conf.list];
+      updated = [{ ...currentEdit, id: formType === 'packages' ? 'pkg-' + Date.now() : generateId(), date: new Date().toISOString() }, ...(Array.isArray(conf.list) ? conf.list : [])];
     } else {
-      updated = conf.list.map(i => i.id === currentEdit.id ? currentEdit : i);
+      updated = Array.isArray(conf.list) ? conf.list.map(i => i.id === currentEdit.id ? currentEdit : i) : [];
     }
     conf.set(updated);
     setStorage(conf.key, updated);
@@ -346,7 +346,7 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {activeTab === 'packages' && packages.map(pkg => (
+                  {activeTab === 'packages' && Array.isArray(packages) && packages.map(pkg => (
                     <tr key={pkg.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="p-4">
                         <div className="font-bold text-blue-950">{pkg.title}</div>
@@ -358,7 +358,7 @@ export default function Admin() {
                       </td>
                     </tr>
                   ))}
-                  {activeTab === 'flights' && flights.map(f => (
+                  {activeTab === 'flights' && Array.isArray(flights) && flights.map(f => (
                     <tr key={f.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="p-4">
                         <div className="font-bold text-blue-950">{f.full_name} ({f.email})</div>
@@ -370,7 +370,7 @@ export default function Admin() {
                       </td>
                     </tr>
                   ))}
-                  {activeTab === 'hotels' && hotels.map(h => (
+                  {activeTab === 'hotels' && Array.isArray(hotels) && hotels.map(h => (
                     <tr key={h.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="p-4">
                         <div className="font-bold text-blue-950">{h.full_name} ({h.email})</div>
@@ -382,7 +382,7 @@ export default function Admin() {
                       </td>
                     </tr>
                   ))}
-                  {activeTab === 'blogs' && blogs.map(b => (
+                  {activeTab === 'blogs' && Array.isArray(blogs) && blogs.map(b => (
                     <tr key={b.id || b._id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="p-4">
                         <div className="font-bold text-blue-950">{b.title}</div>
@@ -394,7 +394,7 @@ export default function Admin() {
                       </td>
                     </tr>
                   ))}
-                  {activeTab === 'reviews' && reviews.map(r => (
+                  {activeTab === 'reviews' && Array.isArray(reviews) && reviews.map(r => (
                     <tr key={r.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="p-4">
                         <div className="font-bold text-blue-950">{r.name}</div>
@@ -407,7 +407,7 @@ export default function Admin() {
                       </td>
                     </tr>
                   ))}
-                  {activeTab === 'contacts' && contacts.map(c => (
+                  {activeTab === 'contacts' && Array.isArray(contacts) && contacts.map(c => (
                     <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="p-4">
                         <div className="font-bold text-blue-950">{c.first_name} {c.last_name}</div>
